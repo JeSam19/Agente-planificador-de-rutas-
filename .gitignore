@@ -1,0 +1,14 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# Entorno virtual y dependencias
+.venv/
+env/
+venv/
+
+# Archivos de caché y temporales de Python
+__pycache__/
+*.py[cod]
+cache/
+
+# Archivos temporales de ejecución
+tempCodeRunnerFile.py
