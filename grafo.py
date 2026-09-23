@@ -32,9 +32,7 @@ alcaldias = [
 ]
 gdf_limites = ox.geocode_to_gdf(alcaldias)
 
-# ==========================================
-# GENERACIÓN DE IMAGEN 1: MAPA DEL GRAFO
-# ==========================================
+# MAPA en png
 print("\nGenerando imagen del grafo...")
 fig_mapa, ax_mapa = ox.plot_graph(
     G,
@@ -129,9 +127,7 @@ fig_mapa.savefig(
 plt.close(fig_mapa)
 print(f"Mapa guardado como: '{salida_mapa}'")
 
-# ==========================================
-# GENERACIÓN DE IMAGEN 2: TABLA DE COSTOS
-# ==========================================
+# Tabla de datos
 print("Generando imagen de la tabla de costos...")
 
 filas_tabla = []
