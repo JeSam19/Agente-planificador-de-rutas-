@@ -232,7 +232,6 @@ def ejecutar_busqueda_ciegas():
 
     input("\nPresiona [Enter] para volver al menú principal...")
 
-
 def ejecutar_busqueda_informada():
     print("\n" + "=" * 60)
     print("              MÓDULO: BÚSQUEDA INFORMADA")
@@ -240,14 +239,163 @@ def ejecutar_busqueda_informada():
     print("\n[!] Módulo en desarrollo (Asignado al equipo).")
     input("\nPresiona [Enter] para volver al menú principal...")
 
-
 def ejecutar_busqueda_local():
     print("\n" + "=" * 60)
-    print("                MÓDULO: BÚSQUEDA LOCAL")
+    print("                MÓDULO: BÚSQUEDA LOCAL (TSP)")
     print("=" * 60)
-    print("\n[!] Módulo en desarrollo (Asignado al equipo).")
-    input("\nPresiona [Enter] para volver al menú principal...")
 
+    # 1. Cargar grafo y seleccionar de 10 a 15 puntos de entrega
+    print("\n[1/4] Cargando grafo vial de la CDMX...")
+    G = cargar_grafo("data/cdmx_norte_centro.graphml")
+
+    print("[2/4] Seleccionando conjunto de entregas alcanzables (10-15 puntos)...")
+    almacen, candidatos = gen_nodo_entrega(G, rango_entregas=(15, 20))
+    alcanzables, _, _ = accesible(G, almacen, candidatos)
+
+    puntos_entrega = alcanzables[:12]
+    todos_los_puntos = [almacen] + puntos_entrega
+
+    print(f"  -> Total de paradas a optimizar: {len(todos_los_puntos)} (1 Almacén + {len(puntos_entrega)} Entregas)")
+
+    # 2. Calcular matriz de distancias punto a punto
+    print("\n[3/4] Calculando matriz de distancias A*/UCS entre todos los pares...")
+    matriz_dist = calcular_matriz_distancias(G, todos_los_puntos)
+
+    # Solución Trivial Aleatoria de referencia
+    solucion_inicial = list(range(len(todos_los_puntos)))
+    costo_inicial = evaluar_costo_ruta(matriz_dist, solucion_inicial)
+
+    # 3. Ejecutar Simulated Annealing y Algoritmo Genético
+    print("\n[4/4] Ejecutando algoritmos de Búsqueda Local...")
+    res_sa = simulated_annealing(matriz_dist, T0=1000.0, alpha=0.95, T_min=0.01)
+    res_ga = algoritmo_genetico(matriz_dist, num_generaciones=250, tam_poblacion=50)
+
+    # Calcular mejoras en porcentaje
+    mejora_sa = ((costo_inicial - res_sa["mejor_costo"]) / costo_inicial) * 100
+    mejora_ga = ((costo_inicial - res_ga["mejor_costo"]) / costo_inicial) * 100
+
+    print("\n" + "-" * 55)
+    print("               RESULTADOS DE LA OPTIMIZACIÓN")
+    print("-" * 55)
+    print(f"Ruta Aleatoria Inicial : {costo_inicial:,.2f} m")
+    print(f"Simulated Annealing    : {res_sa['mejor_costo']:,.2f} m | Mejora: {mejora_sa:.2f}% | Tiempo: {res_sa['tiempo_ms']:.2f} ms")
+    print(f"Algoritmo Genético     : {res_ga['mejor_costo']:,.2f} m | Mejora: {mejora_ga:.2f}% | Tiempo: {res_ga['tiempo_ms']:.2f} ms")
+    print("-" * 55)
+    
+    # Exportación del CSV y de su PNG
+    archivo_csv = "reporte_busqueda_local.csv"
+    img_tabla = "tabla_reporte_busqueda_local.png"
+
+    datos_tabla = [
+        {
+            "Estrategia": "Solución Trivial Aleatoria",
+            "N° Paradas": len(todos_los_puntos),
+            "Costo Total (m)": f"{costo_inicial:,.2f} m",
+            "Mejora (%)": "0.00%",
+            "Tiempo (ms)": "0.00 ms"
+        },
+        {
+            "Estrategia": "Simulated Annealing (SA)",
+            "N° Paradas": len(todos_los_puntos),
+            "Costo Total (m)": f"{res_sa['mejor_costo']:,.2f} m",
+            "Mejora (%)": f"{mejora_sa:.2f}%",
+            "Tiempo (ms)": f"{res_sa['tiempo_ms']:.2f} ms"
+        },
+        {
+            "Estrategia": "Algoritmo Genético (AG)",
+            "N° Paradas": len(todos_los_puntos),
+            "Costo Total (m)": f"{res_ga['mejor_costo']:,.2f} m",
+            "Mejora (%)": f"{mejora_ga:.2f}%",
+            "Tiempo (ms)": f"{res_ga['tiempo_ms']:.2f} ms"
+        }
+    ]
+
+    # 1. Escritura del archivo CSV
+    filas_csv = [
+        {
+            "Estrategia": d["Estrategia"],
+            "N_Paradas": d["N° Paradas"],
+            "Costo_Total_Metros": float(d["Costo Total (m)"].replace(" m", "").replace(",", "")),
+            "Mejora_Porcentaje": float(d["Mejora (%)"].replace("%", "")),
+            "Tiempo_ms": float(d["Tiempo (ms)"].replace(" ms", ""))
+        }
+        for d in datos_tabla
+    ]
+
+    with open(archivo_csv, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=filas_csv[0].keys())
+        writer.writeheader()
+        writer.writerows(filas_csv)
+    print(f"  [+] Reporte CSV exportado automáticamente: {archivo_csv}")
+
+    # 2. Renderizado de la tabla con el esquema Dark/Neón idéntico
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    df_tabla = pd.DataFrame(datos_tabla)
+
+    fig, ax = plt.subplots(figsize=(9, 2.5), dpi=300)
+    fig.patch.set_facecolor('#111111')  # Fondo exterior negro
+    ax.set_facecolor('#111111')
+    ax.axis('tight')
+    ax.axis('off')
+
+    tabla = ax.table(
+        cellText=df_tabla.values,
+        colLabels=df_tabla.columns,
+        cellLoc='center',
+        loc='center'
+    )
+
+    tabla.auto_set_font_size(False)
+    tabla.set_fontsize(9)
+    tabla.scale(1.2, 1.6)
+
+    # Aplicar estilos 
+    for (row, col), cell in tabla.get_celld().items():
+        cell.set_edgecolor('#333333')  # Bordes gris oscuro
+        cell.set_linewidth(0.8)
+        
+        if row == 0:
+            # Encabezado: fondo gris oscuro, texto blanco en negritas
+            cell.set_facecolor('#222222')
+            cell.set_text_props(weight='bold', color='white')
+        else:
+            # Filas de datos: fondo gris muy oscuro (#181818)
+            cell.set_facecolor('#181818')
+            
+            # Resaltado verde neón para las columnas de 'Estrategia' o 'Mejora (%)'
+            if col in [0, 3]:
+                cell.set_text_props(color='#00FF66', weight='bold')
+            else:
+                cell.set_text_props(color='#E0E0E0')
+
+    plt.savefig(img_tabla, bbox_inches='tight', dpi=300, facecolor=fig.get_facecolor())
+    plt.close()
+    print(f"  [+] Imagen de la tabla guardada: {img_tabla}")
+
+    # 4. Generar imágenes 
+    img_convergencia = "convergencia_busqueda_local.png"
+    img_mapa_opt = "mapa_ruta_optimizada_fase3.png"
+
+    graficar_convergencia(res_sa, res_ga, costo_inicial, nombre_archivo=img_convergencia)
+
+    mejor_res = res_sa if res_sa["mejor_costo"] < res_ga["mejor_costo"] else res_ga
+    graficar_ruta_optimizada(
+        G,
+        todos_los_puntos,
+        mejor_res["mejor_ruta"],
+        f"Ruta Óptima ({mejor_res['algoritmo']}) - {mejor_res['mejor_costo']:.1f} m",
+        nombre_archivo=img_mapa_opt,
+    )
+
+    # Abrir imágenes automáticamente
+    print("\n -> Abriendo imágenes generadas...")
+    abrir_archivo_sistema(img_convergencia)
+    abrir_archivo_sistema(img_mapa_opt)
+    abrir_archivo_sistema(img_tabla)
+
+    input("\nPresiona [Enter] para volver al menú principal...")
 
 def menu():
     while True:
@@ -256,7 +404,7 @@ def menu():
         print("=" * 55)
         print("  1. Búsqueda a ciegas (BFS, DFS, UCS)")
         print("  2. Búsqueda informada (En desarrollo)")
-        print("  3. Búsqueda local (En desarrollo)")
+        print("  3. Búsqueda local (AG, SA, CC)"")
         print("  0. Salir")
         print("=" * 55)
 
