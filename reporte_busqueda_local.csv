@@ -1,0 +1,4 @@
+Estrategia,N_Paradas,Costo_Total_Metros,Mejora_Porcentaje,Tiempo_ms
+Solución Trivial Aleatoria,13,94467.98,0.0,0.0
+Simulated Annealing (SA),13,44020.09,53.4,244.37
+Algoritmo Genético (AG),13,45739.04,51.58,455.83
