@@ -5,7 +5,7 @@ import time
 # 1. HEURÍSTICAS GEOGRÁFICAS
 
 def h1_euclidiana(node, goal, G):
-    """ $h_1$: Distancia Euclidiana en coordenadas planas proyectadas. """
+    """ h_1: Distancia Euclidiana en coordenadas planas proyectadas. """
     x1, y1 = G.nodes[node]['x'], G.nodes[node]['y']
     x2, y2 = G.nodes[goal]['x'], G.nodes[goal]['y']
     dx = (x1 - x2) * 111000 * math.cos(math.radians(y1))
@@ -13,7 +13,7 @@ def h1_euclidiana(node, goal, G):
     return math.sqrt(dx**2 + dy**2)
 
 def h2_haversine(node, goal, G):
-    """ $h_2$: Distancia Haversine sobre superficie esférica (metros). """
+    """ h_2: Distancia Haversine sobre superficie esférica (metros). """
     lat1, lon1 = G.nodes[node]['y'], G.nodes[node]['x']
     lat2, lon2 = G.nodes[goal]['y'], G.nodes[goal]['x']
     R = 6371000  # Radio de la Tierra en metros
@@ -24,7 +24,7 @@ def h2_haversine(node, goal, G):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 def h3_personalizada(node, goal, G):
-    """ $h_3$: Haversine ponderada considerando intersecciones (grado del nodo). """
+    """ h_3: Haversine ponderada considerando intersecciones (grado del nodo). """
     base_h = h2_haversine(node, goal, G)
     return base_h + (G.degree[node] * 0.5)
 
