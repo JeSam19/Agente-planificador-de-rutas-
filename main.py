@@ -14,6 +14,14 @@ import matplotlib.pyplot as plt
 from src.BFS import bfs
 from src.DFS import dfs
 from src.fase2 import a_star, greedy_best_first, h1_euclidiana, h2_haversine, h3_personalizada
+from src.fase3 import (
+    calcular_matriz_distancias,
+    evaluar_costo_ruta,
+    simulated_annealing,
+    algoritmo_genetico,
+    graficar_convergencia,
+    graficar_ruta_optimizada
+)
 from src.UCS import ucs
 from src.fase1 import accesible
 from src.utils import cargar_grafo, gen_nodo_entrega
@@ -460,7 +468,7 @@ def menu():
         print("      SISTEMA DE PLANIFICACIÓN DE RUTAS - CDMX")
         print("=" * 55)
         print("  1. Búsqueda a ciegas (BFS, DFS, UCS)")
-        print("  2. Búsqueda informada (En desarrollo)")
+        print("  2. Búsqueda informada ")
         print("  3. Búsqueda local (AG, SA, CC)")
         print("  0. Salir")
         print("=" * 55)
