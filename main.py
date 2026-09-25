@@ -13,6 +13,7 @@ sys.path.append(str(RAIZ))
 import matplotlib.pyplot as plt
 from src.BFS import bfs
 from src.DFS import dfs
+from src.fase2 import a_star, greedy_best_first, h1_euclidiana, h2_haversine, h3_personalizada
 from src.UCS import ucs
 from src.fase1 import accesible
 from src.utils import cargar_grafo, gen_nodo_entrega
@@ -233,10 +234,66 @@ def ejecutar_busqueda_ciegas():
     input("\nPresiona [Enter] para volver al menú principal...")
 
 def ejecutar_busqueda_informada():
-    print("\n" + "=" * 60)
-    print("              MÓDULO: BÚSQUEDA INFORMADA")
-    print("=" * 60)
-    print("\n[!] Módulo en desarrollo (Asignado al equipo).")
+    print("\n" + "=" * 70)
+    print("         MÓDULO: BÚSQUEDA INFORMADA (A* vs Greedy)")
+    print("=" * 70)
+
+    print("\n[1/4] Cargando grafo vial de la CDMX...")
+    G = cargar_grafo("data/cdmx_norte_centro.graphml")
+
+    print("[2/4] Generando almacén y validando 5 destinos...")
+    almacen, candidatos = gen_nodo_entrega(G, rango_entregas=(15, 25))
+    alcanzables, _, _ = accesible(G, almacen, candidatos)
+    destinos = alcanzables[:5]
+
+    print(f"  -> Almacén Origen : {almacen}")
+    print(f"  -> Destinos (5)   : {destinos}")
+
+    print("\n[3/4] Ejecutando algoritmos informados...\n")
+    
+    # Diccionario para guardar las rutas y mandarlas al mapa
+    destinos_info = {d: {} for d in destinos}
+
+    # Función interna para adaptar los nombres de las variables para ver_rutas.py
+    def adaptar_res(res):
+        return {
+            "encontrado": True if res.get("camino") else False,
+            "camino": res.get("camino", []),
+            "metros": res.get("costo", 0),
+            "arcos": len(res.get("camino", [])) - 1 if res.get("camino") else 0,
+            "expandidos": res.get("nodos_expandidos", 0),
+            "tiempo_ms": res.get("tiempo_ms", 0)
+        }
+
+    for i, destino in enumerate(destinos, start=1):
+        print(f"--- Caso {i}: Almacén {almacen} -> Destino {destino} ---")
+        
+        res_a1 = a_star(G, almacen, destino, h1_euclidiana)
+        destinos_info[destino]["A* (Euclidiana)"] = adaptar_res(res_a1)
+        print(f"  [A*_h1_Euclidiana]   {res_a1['costo']:>9.2f} m | {res_a1['nodos_expandidos']:>5} exp | {res_a1['tiempo_ms']:>6.2f} ms")
+        
+        res_a2 = a_star(G, almacen, destino, h2_haversine)
+        destinos_info[destino]["A* (Haversine)"] = adaptar_res(res_a2)
+        print(f"  [A*_h2_Haversine]    {res_a2['costo']:>9.2f} m | {res_a2['nodos_expandidos']:>5} exp | {res_a2['tiempo_ms']:>6.2f} ms")
+        
+        res_a3 = a_star(G, almacen, destino, h3_personalizada)
+        destinos_info[destino]["A* (Personalizada)"] = adaptar_res(res_a3)
+        print(f"  [A*_h3_Personalizada] {res_a3['costo']:>8.2f} m | {res_a3['nodos_expandidos']:>5} exp | {res_a3['tiempo_ms']:>6.2f} ms")
+        
+        res_g = greedy_best_first(G, almacen, destino, h2_haversine)
+        destinos_info[destino]["Greedy Best-First"] = adaptar_res(res_g)
+        print(f"  [Greedy_h2]          {res_g['costo']:>9.2f} m | {res_g['nodos_expandidos']:>5} exp | {res_g['tiempo_ms']:>6.2f} ms\n")
+        
+    print("[4/4] Generando mapa interactivo...")
+    archivo_html = "visualizacion_rutas_informadas.html"
+    
+    mapa = construir_mapa(G, almacen, destinos_info)
+    mapa.save(archivo_html)
+    print(f"  [+] Mapa interactivo guardado: {archivo_html}")
+    
+    print(" -> Abriendo mapa en el navegador...")
+    webbrowser.open(Path(archivo_html).resolve().as_uri())
+
     input("\nPresiona [Enter] para volver al menú principal...")
 
 def ejecutar_busqueda_local():
@@ -404,7 +461,7 @@ def menu():
         print("=" * 55)
         print("  1. Búsqueda a ciegas (BFS, DFS, UCS)")
         print("  2. Búsqueda informada (En desarrollo)")
-        print("  3. Búsqueda local (AG, SA, CC)"")
+        print("  3. Búsqueda local (AG, SA, CC)")
         print("  0. Salir")
         print("=" * 55)
 

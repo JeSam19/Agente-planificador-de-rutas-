@@ -21,6 +21,11 @@ COLORES_ALGORITMO = {
     "BFS": "#00BFFF",   # celeste
     "DFS": "#FF8C00",   # naranja
     "UCS": "#39FF14",   # verde neón
+    "A* (Euclidiana)": "#FF33F6",      # rosa neón
+    "A* (Haversine)": "#F3FF33",       # amarillo neón
+    "A* (Personalizada)": "#B833FF",   # morado
+    "Greedy Best-First": "#FF3333",    # rojo
+    
 }
 
 # Diccionario nombre -> función; así el script no depende de cómo
@@ -32,6 +37,7 @@ ALGORITMOS = {
     "BFS": bfs,
     "DFS": dfs,
     "UCS": ucs,
+    
 }
 
 
@@ -72,11 +78,16 @@ def construir_mapa(G, almacen, destinos_info):
 
     # Una capa por ALGORITMO (no por destino): agrupa ahí las rutas de
     # todos los destinos, así una sola casilla prende/apaga, por ejemplo,
-    # todas las rutas de BFS de un tirón.
+    # todas las rutas de BFS de un tirón.# Extraer dinámicamente los algoritmos que vengan en el diccionario
+    nombres_usados = set()
+    for resultados in destinos_info.values():
+        nombres_usados.update(resultados.keys())
+        
     grupos_algoritmo = {
-        nombre_algo: folium.FeatureGroup(name=nombre_algo, show=True)
-        for nombre_algo in ALGORITMOS
+        nombre: folium.FeatureGroup(name=nombre, show=True)
+        for nombre in nombres_usados
     }
+    
 
     for destino, resultados in destinos_info.items():
         for nombre_algo, res in resultados.items():
